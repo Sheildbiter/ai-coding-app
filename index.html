@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>AI Coding App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f4f1ec;
+        --panel: #fffdf9;
+        --panel-2: #ece7de;
+        --ink: #211c15;
+        --ink-soft: #5c554a;
+        --line: #d8d0c2;
+        --accent: #c2530a;
+        --accent-ink: #ffffff;
+        --accent-soft: #fbe9d7;
+        --teal: #0e6e5c;
+        --teal-soft: #dcf0ea;
+        --code-bg: #201a14;
+        --code-ink: #f3e9d8;
+        --code-dim: #a2937d;
+        --good: #1d7a3a;
+        --warn: #9a6a00;
+        --bad: #b3261e;
+        --radius: 10px;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131009;
+          --panel: #1d1912;
+          --panel-2: #282219;
+          --ink: #f0e9dc;
+          --ink-soft: #b3a892;
+          --line: #3d3527;
+          --accent: #f58a3c;
+          --accent-ink: #221503;
+          --accent-soft: #3d2712;
+          --teal: #4cc2ab;
+          --teal-soft: #123730;
+          --code-bg: #0d0b08;
+          --code-ink: #f3e9d8;
+          --code-dim: #8d7f68;
+          --good: #5cc46f;
+          --warn: #e0aa3e;
+          --bad: #ef7d72;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Archivo", system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      button, [role="button"], select, summary,
+      input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      button {
+        font: inherit; font-weight: 600; cursor: pointer;
+        border: 1px solid var(--line); background: var(--panel);
+        color: var(--ink); border-radius: 8px; padding: 0.35rem 0.9rem;
+      }
+      button:hover { border-color: var(--accent); }
+      button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible {
+        outline: 2px solid var(--accent); outline-offset: 2px;
+      }
+      button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      button.primary:hover { filter: brightness(1.07); }
+      button.ghost { background: transparent; }
+      button.small { min-height: 2rem; padding: 0.15rem 0.6rem; font-size: 0.85rem; }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      input[type="text"], input[type="password"], select, textarea {
+        font: inherit; color: var(--ink); background: var(--panel);
+        border: 1px solid var(--line); border-radius: 8px; padding: 0.45rem 0.6rem;
+        width: 100%;
+      }
+      textarea { resize: vertical; }
+      label { display: block; font-weight: 600; font-size: 0.9rem; margin: 0.9rem 0 0.3rem; }
+      label:first-child { margin-top: 0; }
+      a { color: var(--accent); font-weight: 600; }
+      .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+      .app { max-width: 1180px; margin: 0 auto; padding: 0 14px 48px; }
+
+      /* ---------- toolbar ---------- */
+      .toolbar {
+        display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+        justify-content: space-between; padding: 14px 0 10px;
+        border-bottom: 2px solid var(--ink); margin-bottom: 18px;
+      }
+      .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+      .tabs button { border-radius: 999px; padding: 0.35rem 1rem; }
+      .tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+      .mode { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+      .mode .seg { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+      .mode .seg button { border: 0; border-radius: 0; background: var(--panel); padding: 0.35rem 0.9rem; }
+      .mode .seg button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+      @media (prefers-color-scheme: dark) { .mode .seg button[aria-pressed="true"] { color: #06231c; } }
+
+      .lead { max-width: 68ch; color: var(--ink-soft); margin: 0 0 18px; }
+      .lead strong { color: var(--ink); }
+
+      /* ---------- generic panels ---------- */
+      .card {
+        background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 18px;
+      }
+      .card h2 { margin: 0 0 4px; font-size: 1.25rem; letter-spacing: -0.01em; }
+      .card h3 { margin: 1.1rem 0 0.4rem; font-size: 1rem; }
+      .card .sub { color: var(--ink-soft); margin: 0 0 10px; font-size: 0.95rem; }
+      .view[hidden] { display: none; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+      @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+      .tag {
+        display: inline-block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
+        padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+        vertical-align: middle;
+      }
+      .tag.teal { background: var(--teal-soft); color: var(--teal); }
+
+      /* ---------- studio ---------- */
+      .studio { display: grid; grid-template-columns: 210px 1fr; gap: 16px; align-items: start; }
+      @media (max-width: 820px) { .studio { grid-template-columns: 1fr; } }
+      .filelist { list-style: none; margin: 0 0 10px; padding: 0; }
+      .filelist li { margin-bottom: 4px; }
+      .filelist button {
+        width: 100%; text-align: left; font-family: "JetBrains Mono", monospace;
+        font-size: 0.88rem; font-weight: 500; display: flex; justify-content: space-between; gap: 6px;
+      }
+      .filelist button[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+      .newfile { display: flex; gap: 6px; }
+      .newfile input { min-width: 0; }
+      .editor-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--code-bg); }
+      .editor-bar {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+        background: var(--panel-2); padding: 8px 10px; border-bottom: 1px solid var(--line);
+      }
+      .editor-bar .fname { font-family: "JetBrains Mono", monospace; font-size: 0.9rem; font-weight: 600; }
+      .editor-scroll { display: flex; max-height: 430px; overflow: auto; }
+      .gutter {
+        font-family: "JetBrains Mono", monospace; font-size: 0.85rem; line-height: 1.55;
+        color: var(--code-dim); text-align: right; padding: 12px 8px 12px 12px;
+        user-select: none; white-space: pre; flex: 0 0 auto;
+      }
+      #code {
+        font-family: "JetBrains Mono", monospace; font-size: 0.85rem; line-height: 1.55;
+        background: transparent; color: var(--code-ink); border: 0; border-radius: 0;
+        padding: 12px 12px 12px 4px; min-height: 300px; flex: 1 1 auto; width: auto;
+        white-space: pre; overflow: visible; resize: none; tab-size: 2;
+      }
+      #code:focus-visible { outline-offset: -2px; }
+      .console {
+        margin-top: 14px; background: var(--code-bg); color: var(--code-ink);
+        border-radius: var(--radius); padding: 12px 14px; min-height: 110px;
+        font-family: "JetBrains Mono", monospace; font-size: 0.85rem; line-height: 1.6;
+        white-space: pre-wrap; word-break: break-word;
+      }
+      .console .dim { color: var(--code-dim); }
+      .console .err { color: #ff9d94; }
+      .console .ok { color: #8fe3a8; }
+      .console-head { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+      .console-head h3 { margin: 0; font-size: 1rem; }
+
+      /* ---------- agent builder / chat ---------- */
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+      .chips button { border-radius: 999px; font-size: 0.88rem; }
+      .chips button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+      @media (prefers-color-scheme: dark) { .chips button[aria-pressed="true"] { color: #06231c; } }
+      .chat-log {
+        border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+        height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+        background: var(--bg);
+      }
+      .msg { max-width: 88%; padding: 8px 12px; border-radius: 12px; font-size: 0.95rem; white-space: pre-wrap; word-break: break-word; }
+      .msg.user { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 3px; }
+      .msg.bot { align-self: flex-start; background: var(--panel-2); border-bottom-left-radius: 3px; }
+      .msg .who { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; opacity: 0.75; margin-bottom: 2px; }
+      .chat-row { display: flex; gap: 8px; margin-top: 10px; }
+      .chat-row input { flex: 1 1 auto; min-width: 0; }
+      .note { font-size: 0.88rem; color: var(--ink-soft); }
+      .statusline { font-size: 0.9rem; margin-top: 8px; min-height: 1.4em; }
+
+      /* ---------- training ---------- */
+      .teach-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+      .teach-list li {
+        border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+        display: flex; gap: 10px; align-items: flex-start; justify-content: space-between;
+      }
+      .teach-list .q { font-weight: 600; }
+      .teach-list .a { color: var(--ink-soft); font-size: 0.92rem; }
+      .progress { height: 12px; background: var(--panel-2); border-radius: 999px; overflow: hidden; margin: 10px 0; }
+      .progress > div { height: 100%; width: 0%; background: var(--teal); transition: width 0.35s ease; }
+      .train-log {
+        font-family: "JetBrains Mono", monospace; font-size: 0.82rem; background: var(--code-bg);
+        color: var(--code-ink); border-radius: 8px; padding: 10px 12px; min-height: 120px;
+        white-space: pre-wrap; word-break: break-word; line-height: 1.6;
+      }
+      .stats { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 10px; }
+      .stats div { font-size: 0.9rem; color: var(--ink-soft); }
+      .stats b { display: block; font-size: 1.3rem; color: var(--ink); }
+      .routes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+      @media (max-width: 820px) { .routes { grid-template-columns: 1fr; } }
+      .route { display: block; text-decoration: none; color: var(--ink); }
+      .route:hover { border-color: var(--accent); }
+      .route h3 { margin: 0 0 4px; font-size: 1.05rem; color: var(--accent); }
+      .route p { margin: 0; color: var(--ink-soft); font-size: 0.92rem; }
+
+      /* ---------- helpers ---------- */
+      .helper { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+      .helper + .helper { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 14px; }
+      .helper h3 { margin: 0; font-size: 1.05rem; }
+      .helper p { margin: 2px 0 0; color: var(--ink-soft); font-size: 0.92rem; max-width: 52ch; }
+      .helper-out {
+        margin-top: 14px; background: var(--code-bg); color: var(--code-ink); border-radius: 8px;
+        padding: 12px 14px; font-family: "JetBrains Mono", monospace; font-size: 0.85rem;
+        white-space: pre-wrap; word-break: break-word; line-height: 1.6; min-height: 90px;
+      }
+      .helper-out .w { color: #ffcf7d; } .helper-out .e { color: #ff9d94; } .helper-out .g { color: #8fe3a8; }
+
+      /* ---------- briefs ---------- */
+      .brief-out {
+        background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 14px;
+        font-family: "JetBrains Mono", monospace; font-size: 0.88rem; white-space: pre-wrap;
+        word-break: break-word; min-height: 190px; line-height: 1.65;
+      }
+      .brief-out .k { color: #ffcf7d; font-weight: 600; }
+
+      /* ---------- AI console ---------- */
+      #aiConsole { border: 1px solid var(--teal); border-radius: var(--radius); background: var(--panel); padding: 14px 16px; margin-bottom: 18px; }
+      #aiConsole[hidden] { display: none; }
+      #aiConsole h2 { margin: 0 0 2px; font-size: 1.05rem; }
+      .ai-log {
+        font-family: "JetBrains Mono", monospace; font-size: 0.82rem; background: var(--code-bg);
+        color: var(--code-ink); border-radius: 8px; padding: 10px 12px; height: 170px; overflow-y: auto;
+        white-space: pre-wrap; word-break: break-word; line-height: 1.6; margin-top: 10px;
+      }
+      .ai-log .cmd { color: #ffcf7d; }
+      .ai-row { display: flex; gap: 8px; margin-top: 10px; }
+      .ai-row input { flex: 1 1 auto; min-width: 0; font-family: "JetBrains Mono", monospace; font-size: 0.88rem; }
+      .cmds { font-size: 0.85rem; color: var(--ink-soft); margin-top: 8px; }
+      .cmds code { font-family: "JetBrains Mono", monospace; background: var(--panel-2); padding: 0.05rem 0.35rem; border-radius: 4px; color: var(--ink); }
+      @media (prefers-reduced-motion: reduce) { .progress > div { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="toolbar">
+        <nav class="tabs" role="tablist" aria-label="App sections">
+          <button role="tab" data-view="studio" aria-selected="true">Code Studio</button>
+          <button role="tab" data-view="agents" aria-selected="false">Agent Builder</button>
+          <button role="tab" data-view="train" aria-selected="false">Training Lab</button>
+          <button role="tab" data-view="helpers" aria-selected="false">Helper Agents</button>
+          <button role="tab" data-view="briefs" aria-selected="false">Brief Press</button>
+        </nav>
+        <div class="mode">
+          <span id="modeLabel">Using it as:</span>
+          <div class="seg" role="group" aria-labelledby="modeLabel">
+            <button id="modePerson" aria-pressed="true">A person</button>
+            <button id="modeAI" aria-pressed="false">An AI agent</button>
+          </div>
+        </div>
+      </header>
+
+      <section id="aiConsole" hidden aria-label="AI command console">
+        <h2>AI command console <span class="tag teal">same powers as the buttons</span></h2>
+        <p class="note" style="margin:0">Every button on this page has a command twin. An AI driving this page types commands here and gets JSON back — nothing a person can do is hidden from it, and nothing here is hidden from a person.</p>
+        <div class="ai-log" id="aiLog"></div>
+        <div class="ai-row">
+          <input type="text" id="aiInput" placeholder='Type a command — try: help' autocomplete="off" spellcheck="false" />
+          <button class="primary" id="aiSend">Run command</button>
+        </div>
+        <p class="cmds">Commands: <code>help</code> <code>files</code> <code>open greeter.js</code> <code>run</code> <code>agent name Sparky</code> <code>ask hello</code> <code>teach Q =&gt; A</code> <code>train</code> <code>scan</code> <code>explain</code> <code>brief task=… goal=…</code></p>
+      </section>
+
+      <!-- ============ STUDIO ============ -->
+      <section class="view" id="view-studio">
+        <p class="lead">Write JavaScript, press <strong>Run</strong>, and watch it work. Start from a ready-made file, change it, break it, fix it — <strong>that is how tools get built</strong>. Then open the Agent Builder and give an agent a job.</p>
+        <div class="studio">
+          <div class="card" style="padding:14px">
+            <h2 style="font-size:1rem">Project files</h2>
+            <ul class="filelist" id="fileList"></ul>
+            <div class="newfile">
+              <input type="text" id="newFileName" placeholder="new-file.js" aria-label="New file name" />
+              <button class="small" id="newFileBtn">Add</button>
+            </div>
+            <p class="note">Files live in this tab while the page is open. To keep one, copy the code somewhere safe.</p>
+          </div>
+          <div>
+            <div class="editor-wrap">
+              <div class="editor-bar">
+                <span class="fname" id="currentFileName">greeter.js</span>
+                <span>
+                  <button class="primary" id="runBtn">▶ Run</button>
+                  <button id="stopBtn" disabled>■ Stop</button>
+                </span>
+              </div>
+              <div class="editor-scroll" id="editorScroll">
+                <div class="gutter" id="gutter" aria-hidden="true">1</div>
+                <textarea id="code" spellcheck="false" aria-label="Code editor"></textarea>
+              </div>
+            </div>
+            <div class="console-head">
+              <h3>Console</h3>
+              <button class="small ghost" id="clearConsole">Clear</button>
+            </div>
+            <div class="console" id="consoleOut"><span class="dim">Press Run — whatever your code prints with console.log lands here. Your code runs in a sandbox on this page, so it can't touch anything else.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ AGENT BUILDER ============ -->
+      <section class="view" id="view-agents" hidden>
+        <div class="grid2">
+          <div class="card">
+            <h2>Build an agent</h2>
+            <p class="sub">Give it a name, a job, and instructions. Then teach it facts in the Training Lab and test it in the chat.</p>
+            <label for="agentName">Agent name</label>
+            <input type="text" id="agentName" value="Scout" maxlength="30" />
+            <label for="agentRole">Its job</label>
+            <input type="text" id="agentRole" value="A friendly coding helper for new builders" maxlength="90" />
+            <label for="agentInstructions">Instructions (how it should behave)</label>
+            <textarea id="agentInstructions" rows="3">Answer in short, clear sentences. Be encouraging. If you don't know something, say so honestly.</textarea>
+            <label>Tools it may use</label>
+            <div class="chips" id="toolChips">
+              <button aria-pressed="true" data-tool="Write and check code">Write and check code</button>
+              <button aria-pressed="true" data-tool="Remember taught facts">Remember taught facts</button>
+              <button aria-pressed="false" data-tool="Search the web">Search the web</button>
+              <button aria-pressed="false" data-tool="Do math">Do math</button>
+              <button aria-pressed="false" data-tool="Read files">Read files</button>
+            </div>
+
+            <h3>Brain <span class="tag">free</span></h3>
+            <label for="brainSelect">Where the agent's answers come from</label>
+            <select id="brainSelect">
+              <option value="local">Built-in brain — free, runs on this page, no key needed</option>
+              <option value="gemini">Google Gemini — free API key from AI Studio</option>
+            </select>
+            <div id="keyBox" hidden>
+              <label for="apiKey">Your Gemini API key</label>
+              <input type="password" id="apiKey" placeholder="AIza…" autocomplete="off" />
+              <p class="note">Get a free key (no credit card) at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a> — sign in, tap “Create API key”. Ask a parent first if you're under 18. Free tier is roughly 10–15 questions a minute. Your key stays in this tab only: it is never saved, and this page has no server to send it to. ChatGPT's API has no free tier — it needs money on the account.</p>
+            </div>
+            <p class="statusline" id="brainStatus"></p>
+          </div>
+
+          <div class="card">
+            <h2>Test chat — <span id="chatAgentName">Scout</span></h2>
+            <p class="sub">Talk to your agent. Anything you trained it on in the Training Lab, it can answer here.</p>
+            <div class="chat-log" id="chatLog" aria-live="polite"></div>
+            <div class="chat-row">
+              <input type="text" id="chatInput" placeholder="Ask your agent something…" autocomplete="off" />
+              <button class="primary" id="chatSend">Send</button>
+            </div>
+            <p class="note">Try: “hello”, “who are you”, “what can you do” — then teach it something new and ask again.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TRAINING LAB ============ -->
+      <section class="view" id="view-train" hidden>
+        <div class="grid2">
+          <div class="card">
+            <h2>Teach your agent</h2>
+            <p class="sub">Training starts with examples. Write a question and the answer your agent should give. Add a few, then press <strong>Train</strong> — the examples move into the agent's memory, and you can test it in the Agent Builder chat.</p>
+            <label for="teachQ">When someone asks…</label>
+            <input type="text" id="teachQ" placeholder="What is a dragonborn?" />
+            <label for="teachA">The agent should answer…</label>
+            <textarea id="teachA" rows="2" placeholder="A dragonborn is a winged dragon-person from a D&D world."></textarea>
+            <p style="margin:12px 0 0"><button class="primary" id="teachAdd">Add example</button></p>
+            <h3>Waiting to train <span class="tag" id="pendingCount">0</span></h3>
+            <ul class="teach-list" id="pendingList"></ul>
+          </div>
+
+          <div class="card">
+            <h2>Training run</h2>
+            <p class="sub">This runs the same steps a real training job does, in miniature: read the examples, build the memory, then test recall.</p>
+            <button class="primary" id="trainBtn" disabled>Train agent</button>
+            <div class="progress" aria-hidden="true"><div id="trainBar"></div></div>
+            <div class="train-log" id="trainLog">No training run yet. Add an example and press Train.</div>
+            <div class="stats">
+              <div><b id="statMemory">0</b>facts in memory</div>
+              <div><b id="statRecall">—</b>recall test</div>
+              <div><b id="statTrained">never</b>last trained</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="routes">
+          <a class="card route" href="https://colab.research.google.com/" target="_blank" rel="noopener">
+            <h3>Google Colab ↗</h3>
+            <p>Free GPU notebooks in your browser — the real place beginners fine-tune small models. Free hours are limited and sessions time out.</p>
+          </a>
+          <a class="card route" href="https://huggingface.co/spaces" target="_blank" rel="noopener">
+            <h3>Hugging Face ↗</h3>
+            <p>Free models, datasets, and demo spaces — including the 3D model AIs. Free tier has queues and small hardware; big training is paid.</p>
+          </a>
+          <a class="card route" href="https://www.kaggle.com/code" target="_blank" rel="noopener">
+            <h3>Kaggle Notebooks ↗</h3>
+            <p>Free weekly GPU time with datasets built in. Good next step after Colab. The honest rule everywhere: free training is real, but it is small and slow — nobody gives away unlimited GPU time.</p>
+          </a>
+        </div>
+      </section>
+
+      <!-- ============ HELPERS ============ -->
+      <section class="view" id="view-helpers" hidden>
+        <div class="card">
+          <h2>Free helper agents</h2>
+          <p class="sub">Three small agents that work on whichever file is open in the Code Studio. Free, instant, and they run right here — no key, no account.</p>
+          <div class="helper">
+            <div>
+              <h3>Lens — the explainer</h3>
+              <p>Reads your open file and explains in plain words what it does: its size, its functions, its loops and decisions.</p>
+            </div>
+            <button data-helper="explain">Explain my file</button>
+          </div>
+          <div class="helper">
+            <div>
+              <h3>Radar — the bug hunter</h3>
+              <p>Scans your open file for common trouble: unbalanced brackets, loose <span class="mono">==</span> comparisons, old-style <span class="mono">var</span>, forgotten TODOs, and very long lines.</p>
+            </div>
+            <button data-helper="scan">Scan for bugs</button>
+          </div>
+          <div class="helper">
+            <div>
+              <h3>Press — the brief maker</h3>
+              <p>Paste a long, wordy message below and Press squeezes out the filler words, so the same instructions fit in far fewer characters — the trick that makes agent briefs cheap.</p>
+            </div>
+            <button data-helper="press">Compress text</button>
+          </div>
+          <label for="pressInput">Text for Press to compress</label>
+          <textarea id="pressInput" rows="3" placeholder="Paste a long message here, then press “Compress text”…">Hi, please could you just basically write me a small tool that can check my code for mistakes? I really want it to actually list every problem it finds, and make sure to keep the answers short. Thanks in advance!</textarea>
+          <div class="helper-out" id="helperOut">Helper output lands here. Open a file in the Code Studio first — Lens and Radar work on that file.</div>
+        </div>
+      </section>
+
+      <!-- ============ BRIEF PRESS ============ -->
+      <section class="view" id="view-briefs" hidden>
+        <div class="grid2">
+          <div class="card">
+            <h2>Compressed brief maker</h2>
+            <p class="sub">Agents work best from short briefs: the task, the outcome, the do's and don'ts, the facts, and when to stop. Fill in what you have — empty lines are skipped — and copy the result into any agent chat.</p>
+            <label for="bTask">Task — what to do</label>
+            <input type="text" id="bTask" value="Test the Idol 3D splat of Shieldbiter" />
+            <label for="bGoal">Outcome — what “done” looks like</label>
+            <input type="text" id="bGoal" value="Splat converted to a mesh, shown next to the 2mv mesh" />
+            <label for="bDo">Do</label>
+            <input type="text" id="bDo" value="Use the wide angled input image; report face quality honestly" />
+            <label for="bDont">Don't</label>
+            <input type="text" id="bDont" value="Don't re-run the face sculpt; don't guess measurements" />
+            <label for="bFacts">Facts — paths, numbers, names</label>
+            <input type="text" id="bFacts" value="Input: imagine_media/idol-input-angle.webp; base mesh: base_mesh_2mv.glb (294k tris)" />
+            <label for="bStop">Stop — when to come back</label>
+            <input type="text" id="bStop" value="Stop after the side-by-side render, or if the converter errors twice" />
+          </div>
+          <div class="card">
+            <h2>Your brief</h2>
+            <p class="sub">Short lines, no chat history, facts by file path. This is the format that keeps agent work cheap.</p>
+            <div class="brief-out" id="briefOut"></div>
+            <div class="stats">
+              <div><b id="briefChars">0</b>characters</div>
+              <div><b id="briefTokens">0</b>≈ tokens (rough)</div>
+              <div><b id="briefWords">0</b>words</div>
+            </div>
+            <p style="margin:14px 0 0"><button class="primary" id="briefCopy">Copy brief</button> <span class="statusline" id="copyStatus"></span></p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <iframe id="runner" title="Code runner sandbox" sandbox="allow-scripts" style="display:none"></iframe>
+
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      /* ================= state ================= */
+      const files = {
+        "greeter.js":
+`// Greeter Tool — a tiny tool your agent can call.
+// Press Run and watch the console below.
+
+function greet(name, excited) {
+  let msg = "Hello, " + name + "!";
+  if (excited) {
+    msg = msg.toUpperCase();
+  }
+  return msg;
+}
+
+console.log(greet("Andrew", false));
+console.log(greet("Helper Bot", true));
+
+// Try it: change the names, then run again.`,
+
+        "agent-brain.js":
+`// Agent Brain — the rule book for a simple agent.
+// The agent reads a message and picks an answer.
+
+const rules = [
+  { when: "hello", say: "Hi! I am ready to help." },
+  { when: "code",  say: "I can write and check code." },
+  { when: "bye",   say: "Goodbye — keep building!" }
+];
+
+function reply(message) {
+  const text = message.toLowerCase();
+  for (const rule of rules) {
+    if (text.includes(rule.when)) {
+      return rule.say;
+    }
+  }
+  return "I don't know that yet. Teach me in the Training Lab!";
+}
+
+console.log(reply("hello there"));
+console.log(reply("can you code?"));
+console.log(reply("what is a dragon?"));`,
+
+        "guessing-game.js":
+`// Number Guess — the computer finds the secret
+// by halving the range every time.
+
+let low = 1;
+let high = 100;
+const secret = 42;
+let tries = 0;
+
+while (low <= high) {
+  const guess = Math.floor((low + high) / 2);
+  tries = tries + 1;
+  console.log("Guess " + tries + ": " + guess);
+  if (guess === secret) {
+    console.log("Found it in " + tries + " tries!");
+    break;
+  } else if (guess < secret) {
+    low = guess + 1;
+  } else {
+    high = guess - 1;
+  }
+}
+
+// Try it: change the secret, run again, and
+// count how few guesses halving needs.`
+      };
+      let currentFile = "greeter.js";
+
+      const agent = {
+        name: "Scout",
+        role: "A friendly coding helper for new builders",
+        instructions: "",
+        tools: ["Write and check code", "Remember taught facts"],
+        memory: [] // trained examples: {q, a}
+      };
+      let pending = []; // examples waiting to train
+
+      /* ================= tabs & mode ================= */
+      const viewIds = ["studio", "agents", "train", "helpers", "briefs"];
+      function showView(id) {
+        viewIds.forEach((v) => { $("view-" + v).hidden = v !== id; });
+        document.querySelectorAll(".tabs button").forEach((b) => {
+          b.setAttribute("aria-selected", b.dataset.view === id ? "true" : "false");
+        });
+      }
+      document.querySelectorAll(".tabs button").forEach((b) => {
+        b.addEventListener("click", () => showView(b.dataset.view));
+      });
+      $("modePerson").addEventListener("click", () => setMode(false));
+      $("modeAI").addEventListener("click", () => setMode(true));
+      function setMode(ai) {
+        $("modePerson").setAttribute("aria-pressed", ai ? "false" : "true");
+        $("modeAI").setAttribute("aria-pressed", ai ? "true" : "false");
+        $("aiConsole").hidden = !ai;
+        if (ai) aiLog("sys", '{"ok":true,"mode":"ai","note":"Command console ready. Type: help"}');
+      }
+
+      /* ================= code studio ================= */
+      const codeEl = $("code"), gutterEl = $("gutter"), consoleEl = $("consoleOut");
+      function renderFileList() {
+        const ul = $("fileList");
+        ul.innerHTML = "";
+        Object.keys(files).forEach((name) => {
+          const li = document.createElement("li");
+          const b = document.createElement("button");
+          b.textContent = name;
+          b.setAttribute("aria-current", name === currentFile ? "true" : "false");
+          b.addEventListener("click", () => openFile(name));
+          li.appendChild(b);
+          ul.appendChild(li);
+        });
+      }
+      function updateGutter() {
+        const n = codeEl.value.split("\n").length;
+        let s = "";
+        for (let i = 1; i <= n; i++) s += i + "\n";
+        gutterEl.textContent = s;
+      }
+      function openFile(name) {
+        if (!(name in files)) return false;
+        files[currentFile] = codeEl.value;
+        currentFile = name;
+        codeEl.value = files[name];
+        $("currentFileName").textContent = name;
+        renderFileList();
+        updateGutter();
+        return true;
+      }
+      codeEl.addEventListener("input", () => { files[currentFile] = codeEl.value; updateGutter(); });
+      codeEl.addEventListener("scroll", () => { gutterEl.scrollTop = codeEl.scrollTop; });
+      $("editorScroll").addEventListener("scroll", (e) => { gutterEl.style.transform = "translateY(" + (-e.target.scrollTop) + "px)"; });
+      codeEl.addEventListener("keydown", (e) => {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          const s = codeEl.selectionStart;
+          codeEl.setRangeText("  ", s, codeEl.selectionEnd, "end");
+          files[currentFile] = codeEl.value; updateGutter();
+        }
+      });
+      $("newFileBtn").addEventListener("click", () => {
+        let name = $("newFileName").value.trim();
+        if (!name) return;
+        if (!name.endsWith(".js")) name += ".js";
+        if (name in files) { openFile(name); return; }
+        files[name] = "// " + name + " — a new tool.\n// Write some JavaScript and press Run.\n\nconsole.log(\"It works!\");\n";
+        $("newFileName").value = "";
+        openFile(name);
+      });
+
+      function fmtArg(a) {
+        if (typeof a === "string") return a;
+        if (a === undefined) return "undefined";
+        try { return JSON.stringify(a); } catch (e) { return String(a); }
+      }
+      function consoleLine(text, cls) {
+        if (consoleEl.querySelector(".dim") && consoleEl.dataset.fresh !== "1") {
+          consoleEl.innerHTML = ""; consoleEl.dataset.fresh = "1";
+        }
+        const span = document.createElement("span");
+        if (cls) span.className = cls;
+        span.textContent = text + "\n";
+        consoleEl.appendChild(span);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+      $("clearConsole").addEventListener("click", () => { consoleEl.innerHTML = ""; consoleEl.dataset.fresh = "1"; });
+
+      const runner = $("runner");
+      function runCode() {
+        const code = codeEl.value;
+        const bridge =
+          'var send = function(type, text){ parent.postMessage({__forge:1, type:type, text:text}, "*"); };\n' +
+          'console.log = function(){ var p=[]; for (var i=0;i<arguments.length;i++) p.push(arguments[i]); send("log", p); };\n' +
+          'console.warn = function(){ var p=[]; for (var i=0;i<arguments.length;i++) p.push(arguments[i]); send("warn", p); };\n' +
+          'console.error = function(){ var p=[]; for (var i=0;i<arguments.length;i++) p.push(arguments[i]); send("error", p); };\n' +
+          'window.onerror = function(msg){ send("error", [String(msg)]); };\n';
+        const doc =
+          "<!doctype html><html><body>" +
+          "<script>" + bridge + "<\/script>" +
+          "<script>" + code.replace(/<\/script/gi, "<\\/script") + "<\/script>" +
+          "<script>parent.postMessage({__forge:1, type:'done', text:''}, '*');<\/script>" +
+          "</body></html>";
+        consoleEl.innerHTML = ""; consoleEl.dataset.fresh = "1";
+        consoleLine("› running " + currentFile + " …", "dim");
+        $("stopBtn").disabled = false;
+        runner.srcdoc = doc;
+      }
+      function stopCode() {
+        runner.srcdoc = "";
+        $("stopBtn").disabled = true;
+        consoleLine("■ stopped", "err");
+      }
+      $("runBtn").addEventListener("click", runCode);
+      $("stopBtn").addEventListener("click", stopCode);
+      window.addEventListener("message", (e) => {
+        const d = e.data;
+        if (!d || d.__forge !== 1) return;
+        if (d.type === "done") {
+          $("stopBtn").disabled = true;
+          consoleLine("✓ finished", "ok");
+        } else {
+          const args = Array.isArray(d.text) ? d.text.map(fmtArg).join(" ") : String(d.text);
+          consoleLine(args, d.type === "error" ? "err" : d.type === "warn" ? "err" : "");
+        }
+      });
+
+      /* ================= agent brain (local) ================= */
+      function norm(s) { return s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim(); }
+      function findMemory(msg) {
+        const n = norm(msg);
+        if (!n) return null;
+        let best = null, bestScore = 0;
+        agent.memory.forEach((m) => {
+          const q = norm(m.q);
+          let score = 0;
+          if (n === q) score = 1;
+          else {
+            const qt = q.split(" ").filter(Boolean), nt = n.split(" ").filter(Boolean);
+            if (qt.length) {
+              const hit = qt.filter((w) => nt.includes(w)).length;
+              score = hit / qt.length;
+              if (n.includes(q) || q.includes(n)) score = Math.max(score, 0.85);
+            }
+          }
+          if (score > bestScore) { bestScore = score; best = m; }
+        });
+        return bestScore >= 0.6 ? best : null;
+      }
+      function localReply(msg) {
+        const mem = findMemory(msg);
+        if (mem) return mem.a;
+        const t = " " + norm(msg) + " ";
+        if (/\b(hi|hello|hey|yo)\b/.test(t)) return "Hi! I'm " + agent.name + ". " + agent.role + ". Ask me something — or teach me a fact in the Training Lab first.";
+        if (t.includes("your name") || t.includes("who are you")) {
+          return "I'm " + agent.name + " — " + agent.role + "." + (agent.instructions ? " My instructions: " + agent.instructions : "");
+        }
+        if (t.includes("what can you do") || t.trim() === "help") {
+          return "I can use these tools: " + (agent.tools.length ? agent.tools.join(", ") : "none yet") + ". I also remember " + agent.memory.length + " taught fact" + (agent.memory.length === 1 ? "" : "s") + ".";
+        }
+        if (t.includes("thank")) return "You're welcome! Keep building.";
+        if (t.includes("bye")) return "Goodbye — keep building!";
+        if (t.includes("code") || t.includes("bug") || t.includes("function")) {
+          return "For code, my best moves: open the file in the Code Studio, press Run, and read the console. Radar in Helper Agents can scan it for common bugs too.";
+        }
+        return "I don't know that one yet. Teach it to me in the Training Lab — add the question and answer, press Train — and I'll answer it here.";
+      }
+      async function geminiReply(msg) {
+        const key = $("apiKey").value.trim();
+        const facts = agent.memory.map((m) => "Q: " + m.q + "\nA: " + m.a).join("\n");
+        const system = "You are " + agent.name + ". Your job: " + agent.role + ". Instructions: " + agent.instructions +
+          " Tools you may use: " + agent.tools.join(", ") + "." + (facts ? " Facts you were taught:\n" + facts : "") +
+          " Answer briefly and clearly.";
+        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: system }] },
+            contents: [{ parts: [{ text: msg }] }]
+          })
+        });
+        if (!res.ok) throw new Error("Gemini answered with HTTP " + res.status);
+        const data = await res.json();
+        const text = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+          data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+          data.candidates[0].content.parts[0].text;
+        if (!text) throw new Error("Gemini sent back an empty answer");
+        return text;
+      }
+      function addMsg(who, text, isUser) {
+        const log = $("chatLog");
+        const div = document.createElement("div");
+        div.className = "msg " + (isUser ? "user" : "bot");
+        const w = document.createElement("span");
+        w.className = "who"; w.textContent = who;
+        div.appendChild(w);
+        div.appendChild(document.createTextNode(text));
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+        return div;
+      }
+      async function askAgent(msg) {
+        addMsg("You", msg, true);
+        const useGemini = $("brainSelect").value === "gemini" && $("apiKey").value.trim().length > 10;
+        if (useGemini) {
+          const thinking = addMsg(agent.name, "Thinking…", false);
+          try {
+            const ans = await geminiReply(msg);
+            thinking.lastChild.textContent = ans;
+          } catch (err) {
+            thinking.lastChild.textContent = "(Gemini didn't answer: " + err.message + " — falling back to my built-in brain.)\n" + localReply(msg);
+          }
+        } else {
+          addMsg(agent.name, localReply(msg), false);
+        }
+      }
+      $("chatSend").addEventListener("click", () => {
+        const v = $("chatInput").value.trim();
+        if (!v) return;
+        $("chatInput").value = "";
+        askAgent(v);
+      });
+      $("chatInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("chatSend").click(); });
+
+      /* agent builder bindings */
+      function syncAgent() {
+        agent.name = $("agentName").value.trim() || "Agent";
+        agent.role = $("agentRole").value.trim();
+        agent.instructions = $("agentInstructions").value.trim();
+        $("chatAgentName").textContent = agent.name;
+      }
+      ["agentName", "agentRole", "agentInstructions"].forEach((id) => $(id).addEventListener("input", syncAgent));
+      $("toolChips").querySelectorAll("button").forEach((b) => {
+        b.addEventListener("click", () => {
+          const on = b.getAttribute("aria-pressed") !== "true";
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+          agent.tools = Array.from($("toolChips").querySelectorAll('button[aria-pressed="true"]')).map((x) => x.dataset.tool);
+        });
+      });
+      $("brainSelect").addEventListener("change", () => {
+        const g = $("brainSelect").value === "gemini";
+        $("keyBox").hidden = !g;
+        $("brainStatus").textContent = g
+          ? "Gemini brain selected. Paste your free key above — answers then come from Google's Gemini, with your agent's name, job and taught facts sent along."
+          : "Built-in brain: answers come from your agent's rules and trained memory, right on this page.";
+      });
+
+      /* ================= training lab ================= */
+      function renderPending() {
+        $("pendingCount").textContent = pending.length;
+        const ul = $("pendingList");
+        ul.innerHTML = "";
+        pending.forEach((p, i) => {
+          const li = document.createElement("li");
+          const left = document.createElement("div");
+          const q = document.createElement("div"); q.className = "q"; q.textContent = p.q;
+          const a = document.createElement("div"); a.className = "a"; a.textContent = p.a;
+          left.appendChild(q); left.appendChild(a);
+          const del = document.createElement("button");
+          del.className = "small"; del.textContent = "Remove";
+          del.addEventListener("click", () => { pending.splice(i, 1); renderPending(); });
+          li.appendChild(left); li.appendChild(del);
+          ul.appendChild(li);
+        });
+        $("trainBtn").disabled = pending.length === 0;
+      }
+      $("teachAdd").addEventListener("click", () => {
+        const q = $("teachQ").value.trim(), a = $("teachA").value.trim();
+        if (!q || !a) return;
+        pending.push({ q: q, a: a });
+        $("teachQ").value = ""; $("teachA").value = "";
+        renderPending();
+      });
+      let training = false;
+      function trainAgent(done) {
+        if (training || pending.length === 0) { if (done) done(false); return; }
+        training = true;
+        const batch = pending.slice();
+        const log = $("trainLog");
+        log.textContent = "";
+        const lines = [
+          "Reading " + batch.length + " example" + (batch.length === 1 ? "" : "s") + "…",
+          "Checking for clashes with old memory… none.",
+          "Writing examples into agent memory…",
+          "Running recall test…"
+        ];
+        let step = 0;
+        $("trainBar").style.width = "4%";
+        const tick = () => {
+          if (step < lines.length) {
+            log.textContent += (log.textContent ? "\n" : "") + "› " + lines[step];
+            step++;
+            $("trainBar").style.width = Math.round((step / (lines.length + 1)) * 100) + "%";
+            setTimeout(tick, 420);
+          } else {
+            batch.forEach((ex) => {
+              const old = agent.memory.findIndex((m) => norm(m.q) === norm(ex.q));
+              if (old >= 0) agent.memory[old] = ex; else agent.memory.push(ex);
+            });
+            pending = pending.filter((p) => !batch.includes(p));
+            let hits = 0;
+            agent.memory.forEach((m) => { if (findMemory(m.q)) hits++; });
+            $("statMemory").textContent = agent.memory.length;
+            $("statRecall").textContent = hits + " / " + agent.memory.length;
+            $("statTrained").textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+            log.textContent += "\n✓ Done. Recall test: " + hits + " of " + agent.memory.length + " taught answers found. Ask your agent in the Builder chat.";
+            $("trainBar").style.width = "100%";
+            renderPending();
+            training = false;
+            if (done) done(true);
+          }
+        };
+        setTimeout(tick, 250);
+      }
+      $("trainBtn").addEventListener("click", () => trainAgent(null));
+
+      /* ================= helpers ================= */
+      function currentCode() { files[currentFile] = codeEl.value; return codeEl.value; }
+      function explainCode(code) {
+        const lines = code.split("\n");
+        const codeLines = lines.filter((l) => l.trim() && !l.trim().startsWith("//"));
+        const fns = [];
+        const re = /function\s+([A-Za-z_$][\w$]*)/g; let m;
+        while ((m = re.exec(code))) fns.push(m[1]);
+        const loops = (code.match(/\b(for|while)\s*\(/g) || []).length;
+        const ifs = (code.match(/\bif\s*\(/g) || []).length;
+        const logs = (code.match(/console\.log/g) || []).length;
+        const firstComment = lines.find((l) => l.trim().startsWith("//"));
+        let out = "Lens read " + currentFile + ":\n";
+        out += "• " + lines.length + " lines total, " + codeLines.length + " lines of actual code.\n";
+        if (firstComment) out += "• It announces itself: \"" + firstComment.trim().replace(/^\/\/\s*/, "") + "\"\n";
+        out += "• Functions: " + (fns.length ? fns.join(", ") + " (" + fns.length + ")" : "none — it runs top to bottom") + ".\n";
+        out += "• Loops: " + loops + " · Decisions (if): " + ifs + " · console.log calls: " + logs + ".\n";
+        out += logs ? "• It talks through the console, so press Run in the Studio to watch it work." : "• It prints nothing — add a console.log to see it work.";
+        return out;
+      }
+      function scanCode(code) {
+        const out = [];
+        const count = (ch) => code.split(ch).length - 1;
+        const pairs = [["{", "}"], ["(", ")"], ["[", "]"]];
+        pairs.forEach(([a, b]) => {
+          if (count(a) !== count(b)) out.push({ cls: "e", text: "✗ Brackets don't balance: " + count(a) + " × \"" + a + "\" but " + count(b) + " × \"" + b + "\". Code like this won't run." });
+        });
+        const loose = (code.match(/(^|[^=!<>])==(?!=)/g) || []).length;
+        if (loose) out.push({ cls: "w", text: "⚠ " + loose + " loose == comparison" + (loose === 1 ? "" : "s") + ". === is safer — == quietly converts types and hides bugs." });
+        const vars = (code.match(/\bvar\s+/g) || []).length;
+        if (vars) out.push({ cls: "w", text: "⚠ " + vars + " old-style var declaration" + (vars === 1 ? "" : "s") + ". let and const behave more predictably." });
+        code.split("\n").forEach((l, i) => {
+          if (/TODO|FIXME/.test(l)) out.push({ cls: "w", text: "⚠ Line " + (i + 1) + " still has a " + (l.includes("FIXME") ? "FIXME" : "TODO") + " waiting: " + l.trim().slice(0, 70) });
+          if (l.length > 90) out.push({ cls: "w", text: "⚠ Line " + (i + 1) + " is " + l.length + " characters long — hard to read on a phone." });
+        });
+        const logs = (code.match(/console\.log/g) || []).length;
+        if (logs) out.push({ cls: "", text: "• " + logs + " console.log call" + (logs === 1 ? "" : "s") + " — fine while building; a finished tool usually prints less." });
+        if (!out.length) out.push({ cls: "g", text: "✓ Radar found no common problems in " + currentFile + ". (It's a quick scan, not a full review — running the code is the real test.)" });
+        else out.unshift({ cls: "", text: "Radar scanned " + currentFile + ":" });
+        return out;
+      }
+      function compressText(text) {
+        let t = text.replace(/\s+/g, " ");
+        const phrases = ["thanks in advance", "thank you in advance", "i want you to", "could you please", "can you please", "could you", "can you", "please", "make sure to", "make sure you", "in order to", "just", "basically", "actually", "really", "very", "simply"];
+        phrases.forEach((p) => {
+          const re = new RegExp("\\b" + p.replace(/ /g, "\\s+") + "\\b", "gi");
+          t = t.replace(re, " ");
+        });
+        t = t.replace(/\s+/g, " ").replace(/\s+([,.!?])/g, "$1").replace(/([,.!?])[,.!?]+/g, "$1").replace(/^\s*[,.!?]\s*/, "").trim();
+        if (t) t = t.charAt(0).toUpperCase() + t.slice(1);
+        return t;
+      }
+      document.querySelectorAll("[data-helper]").forEach((b) => {
+        b.addEventListener("click", () => runHelper(b.dataset.helper));
+      });
+      function runHelper(kind) {
+        const out = $("helperOut");
+        if (kind === "explain") { out.textContent = explainCode(currentCode()); return explainCode(currentCode()); }
+        if (kind === "scan") {
+          const findings = scanCode(currentCode());
+          out.innerHTML = "";
+          findings.forEach((f) => {
+            const span = document.createElement("span");
+            if (f.cls) span.className = f.cls;
+            span.textContent = f.text + "\n";
+            out.appendChild(span);
+          });
+          return findings.map((f) => f.text).join(" ");
+        }
+        if (kind === "press") {
+          const src = $("pressInput").value;
+          if (!src.trim()) { out.textContent = "Press needs text first — paste a long message in the box above."; return "no input"; }
+          const squeezed = compressText(src);
+          const saved = src.length ? Math.max(0, Math.round((1 - squeezed.length / src.length) * 100)) : 0;
+          out.textContent = "Press squeezed it:\n\n" + squeezed + "\n\n" + src.length + " characters → " + squeezed.length + " (" + saved + "% smaller, same instructions).";
+          return squeezed;
+        }
+      }
+
+      /* ================= brief press ================= */
+      const briefFields = [["TASK", "bTask"], ["GOAL", "bGoal"], ["DO", "bDo"], ["DON'T", "bDont"], ["FACTS", "bFacts"], ["STOP", "bStop"]];
+      function briefText() {
+        return briefFields.map(([k, id]) => {
+          const v = $(id).value.trim();
+          return v ? k + ": " + v : null;
+        }).filter(Boolean).join("\n");
+      }
+      function renderBrief() {
+        const t = briefText();
+        const out = $("briefOut");
+        out.innerHTML = "";
+        t.split("\n").forEach((line) => {
+          const idx = line.indexOf(":");
+          const span = document.createElement("span");
+          span.className = "k"; span.textContent = line.slice(0, idx + 1);
+          out.appendChild(span);
+          out.appendChild(document.createTextNode(line.slice(idx + 1) + "\n"));
+        });
+        if (!t) out.textContent = "Fill in a field on the left — your brief appears here.";
+        $("briefChars").textContent = t.length;
+        $("briefWords").textContent = t ? t.split(/\s+/).length : 0;
+        $("briefTokens").textContent = t ? Math.ceil(t.length / 4) : 0;
+      }
+      briefFields.forEach(([, id]) => $(id).addEventListener("input", renderBrief));
+      $("briefCopy").addEventListener("click", async () => {
+        const t = briefText();
+        try { await navigator.clipboard.writeText(t); $("copyStatus").textContent = "Copied — paste it into any agent chat."; }
+        catch (e) {
+          const ta = document.createElement("textarea");
+          ta.value = t; document.body.appendChild(ta); ta.select();
+          document.execCommand("copy"); ta.remove();
+          $("copyStatus").textContent = "Copied — paste it into any agent chat.";
+        }
+        setTimeout(() => { $("copyStatus").textContent = ""; }, 3000);
+      });
+
+      /* ================= AI command console ================= */
+      function aiLog(kind, text) {
+        const log = $("aiLog");
+        const span = document.createElement("span");
+        if (kind === "cmd") { span.className = "cmd"; span.textContent = "› " + text + "\n"; }
+        else span.textContent = text + "\n";
+        log.appendChild(span);
+        log.scrollTop = log.scrollHeight;
+      }
+      function aiResult(obj) { aiLog("res", JSON.stringify(obj)); }
+      function runCommand(raw) {
+        const s = raw.trim();
+        if (!s) return;
+        aiLog("cmd", s);
+        const sp = s.indexOf(" ");
+        const cmd = (sp === -1 ? s : s.slice(0, sp)).toLowerCase();
+        const rest = sp === -1 ? "" : s.slice(sp + 1).trim();
+        if (cmd === "help") {
+          aiResult({ ok: true, commands: {
+            files: "list project files", "open <file>": "open a file in the editor", run: "run the open file",
+            "agent name <x>": "rename the agent", "agent role <x>": "set the agent's job",
+            "ask <text>": "ask the agent (uses trained memory)", "teach <q> => <a>": "queue a training example",
+            train: "train queued examples into memory", scan: "Radar bug-scan of open file",
+            explain: "Lens explanation of open file", "brief task=.. goal=.. do=.. dont=.. facts=.. stop=..": "build a compressed brief"
+          }});
+        } else if (cmd === "files") {
+          aiResult({ ok: true, files: Object.keys(files), open: currentFile });
+        } else if (cmd === "open") {
+          aiResult(openFile(rest) ? { ok: true, open: currentFile } : { ok: false, error: "no file named " + rest, files: Object.keys(files) });
+        } else if (cmd === "run") {
+          showView("studio"); runCode();
+          aiResult({ ok: true, ran: currentFile, note: "output is in the Studio console" });
+        } else if (cmd === "agent") {
+          const sp2 = rest.indexOf(" ");
+          const sub = (sp2 === -1 ? rest : rest.slice(0, sp2)).toLowerCase();
+          const val = sp2 === -1 ? "" : rest.slice(sp2 + 1).trim();
+          if (sub === "name" && val) { $("agentName").value = val; syncAgent(); aiResult({ ok: true, agent: agent.name }); }
+          else if (sub === "role" && val) { $("agentRole").value = val; syncAgent(); aiResult({ ok: true, role: agent.role }); }
+          else aiResult({ ok: false, error: "use: agent name <x> or agent role <x>" });
+        } else if (cmd === "ask") {
+          if (!rest) { aiResult({ ok: false, error: "ask needs a question" }); return; }
+          const mem = findMemory(rest);
+          aiResult({ ok: true, agent: agent.name, answer: localReply(rest), source: mem ? "trained memory" : "built-in rules" });
+        } else if (cmd === "teach") {
+          const parts = rest.split("=>");
+          if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) { aiResult({ ok: false, error: "use: teach <question> => <answer>" }); return; }
+          pending.push({ q: parts[0].trim(), a: parts[1].trim() });
+          renderPending();
+          aiResult({ ok: true, queued: pending.length, note: "run: train" });
+        } else if (cmd === "train") {
+          if (!pending.length) { aiResult({ ok: false, error: "nothing queued — teach something first" }); return; }
+          showView("train");
+          trainAgent((ok) => aiResult({ ok: ok, memory_size: agent.memory.length }));
+        } else if (cmd === "scan") {
+          aiResult({ ok: true, file: currentFile, findings: scanCode(currentCode()).map((f) => f.text) });
+        } else if (cmd === "explain") {
+          aiResult({ ok: true, file: currentFile, explanation: explainCode(currentCode()) });
+        } else if (cmd === "brief") {
+          const map = { task: "bTask", goal: "bGoal", do: "bDo", dont: "bDont", facts: "bFacts", stop: "bStop" };
+          Object.keys(map).forEach((k) => {
+            const m = rest.match(new RegExp(k + "=([^=]*?)(?=\\s(?:task|goal|do|dont|facts|stop)=|$)"));
+            if (m) $(map[k]).value = m[1].trim();
+          });
+          renderBrief();
+          showView("briefs");
+          aiResult({ ok: true, brief: briefText() });
+        } else {
+          aiResult({ ok: false, error: "unknown command: " + cmd, hint: "type: help" });
+        }
+      }
+      $("aiSend").addEventListener("click", () => { runCommand($("aiInput").value); $("aiInput").value = ""; });
+      $("aiInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("aiSend").click(); });
+
+      /* ================= init ================= */
+      syncAgent();
+      renderFileList();
+      codeEl.value = files[currentFile];
+      updateGutter();
+      renderPending();
+      renderBrief();
+      addMsg(agent.name, "Hi! I'm Scout, the starter agent. Ask me something I couldn't possibly know — then teach it to me in the Training Lab, press Train, and ask again.", false);
+    </script>
+  </body>
+</html>
